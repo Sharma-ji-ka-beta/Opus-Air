@@ -1,0 +1,8 @@
+- [ ] Fix `app.py` `_gemini_model` -> `_genai_client`.
+- [ ] Fix `simulation_engine.py` `eval` -> `json.loads` safely.
+- [ ] Fix `gemini_service.py` to use `google.genai` SDK.
+- [ ] Update `app_v4.js` `API = 'http://127.0.0.1:5050'`.
+- [ ] Restore "How It Works" tab and Delay Injection Modal in `index.html`.
+- [ ] Update `app_v4.js` to implement hybrid fallback (fetch from 5050 for recommendations, else fallback to JS).
+- [ ] Update `app_v4.js` turnarounds cap (scale to ~2 min realtime).
+- [ ] Verify functionality via browser subagent.

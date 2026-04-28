@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opus Air · AI Turnaround Coordinator</title>
+  <meta name="description" content="Opus Air uses AI-powered delay propagation to predict and prevent airport turnaround delays before they cascade." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles_v4.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- ═══════════════════════ NAV ═══════════════════════ -->
+  <header class="nav" id="main-nav">
+    <div class="nav-left">
+      <div class="logo">
+        <span class="logo-icon">✈</span>
+        <span class="logo-text">Opus Air</span>
+      </div>
+      <div class="live-badge">
+        <span class="live-dot"></span>
+        LIVE
+      </div>
+      </div>
+    </div>
+    <nav id="tabs" class="tab-bar">
+      <button class="tab active" data-page="dashboard" id="tab-dashboard">Dashboard</button>
+      <button class="tab" data-page="gates" id="tab-gates">Gates</button>
+      <button class="tab" data-page="reports" id="tab-reports">Reports</button>
+      <button class="tab" data-page="how" id="tab-how">How It Works</button>
+    </nav>
+    <div class="nav-right">
+      <span class="clock" id="live-clock">--:--:--</span>
+      <button class="btn-reset" id="btn-theme-toggle" title="Toggle Light/Dark Mode" style="background:transparent; border:1px solid var(--glass-border); padding:0.4rem 0.8rem; border-radius:4px; color:var(--text-bright); cursor:pointer; font-family:var(--font-mono);">☀ Light Mode</button>
+      <button class="btn-reset" id="btn-reset" title="Reset simulation">↺ Reset</button>
+      <button class="btn-inject" id="btn-open-modal">⚡ Inject Delay</button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════ DASHBOARD PAGE ═══════════════════════ -->
+  <div id="page-dashboard" class="page active">
+
+    <!-- Stats Bar -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-card border-blue">
+        <div class="stat-value mono" id="stat-active">0</div>
+        <div class="stat-label">Active Turnarounds</div>
+        <div class="stat-sub" id="stat-active-sub">Gates --</div>
+      </div>
+      <div class="stat-card border-red critical-card">
+        <div class="stat-value mono critical" id="stat-alerts">0</div>
+        <div class="stat-label">Critical Alerts</div>
+        <div class="stat-sub" id="stat-alerts-sub">All systems nominal</div>
+      </div>
+      <div class="stat-card border-green saved-card">
+        <div class="stat-value mono saved" id="stat-saved">0</div>
+        <div class="stat-label">Minutes Saved Today</div>
+        <div class="stat-sub" id="stat-prevented">0 delays prevented</div>
+      </div>
+      <div class="stat-card border-white">
+        <div class="stat-value mono" id="stat-ontime">100%</div>
+        <div class="stat-label">On-Time Rate</div>
+        <div class="stat-sub">Last 10 flights</div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+
+      <!-- Active Flights Panel -->
+      <div class="card flights-card">
+        <div class="card-header">
+          <h2>Active Turnarounds</h2>
+          <span class="badge-count" id="flights-count">0 flights</span>
+        </div>
+        <div id="flights-list" class="flights-list">
+          <div class="loading-pulse">Waiting for simulation...</div>
+        </div>
+      </div>
+
+      <!-- AI Recommendation Panel -->
+      <div class="card ai-card" id="ai-panel">
+        <div class="card-header">
+          <h2>Optimization Engine</h2>
+          <span class="ai-badge">Auto-Reallocation</span>
+        </div>
+        <div id="rec-idle" class="rec-idle">
+          <div class="rec-idle-icon">🤖</div>
+          <p>System monitoring resources…</p>
+          <p class="rec-idle-hint">Idle workers will be assigned to delayed flights automatically.</p>
+        </div>
+        <div id="rec-active" class="rec-active hidden">
+          <div class="rec-success-icon">✓</div>
+          <p class="rec-text" id="rec-text">Workers reallocated!</p>
+          <div class="rec-meta">
+            <span class="rec-save" id="rec-save-label">+0 min saved</span>
+            <span class="rec-flight" id="rec-flight-label">–</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Graph Panel -->
+      <div class="card graph-card full-width-card" style="grid-column: 1 / -1;">
+        <div class="card-header">
+          <h2>Time Constraints vs Saved Time</h2>
+        </div>
+        <div style="height: 250px; width: 100%;">
+          <canvas id="dashboard-chart"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ GATES PAGE ═══════════════════════ -->
+  <div id="page-gates" class="page">
+    <div class="gates-grid" id="gates-grid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ REPORTS PAGE ═══════════════════════ -->
+  <div id="page-reports" class="page">
+    <div class="reports-layout" style="display:grid; grid-template-columns: 1fr 2fr; gap:1.5rem;">
+      <div class="card" style="padding:0">
+        <div class="card-header">
+          <h2>Completed Turnarounds</h2>
+        </div>
+        <div class="reports-list" id="reports-flight-list" style="max-height:600px; overflow-y:auto; padding:1rem;">
+          <!-- JS populates this -->
+        </div>
+      </div>
+      <div class="card" style="min-height:500px; display:flex; flex-direction:column;">
+        <div class="card-header">
+          <h2>AI Flight Report</h2>
+          <button id="btn-generate-report" class="preset-btn" style="display:none;">Generate AI Report</button>
+        </div>
+        <div id="report-content" style="padding:1.5rem; flex:1; font-family:var(--font-mono); line-height:1.6; color:var(--text-dim);">
+          Select a completed flight from the list to view or generate its AI turnaround report.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ HOW IT WORKS PAGE ═══════════════════════ -->
+  <div id="page-how" class="page">
+    <div class="how-hero">
+      <h1>How Airport Turnaround Works</h1>
+      <p class="how-sub">Every departure depends on a precise sequence of ground operations. A single delay cascades through the entire chain.</p>
+    </div>
+
+    <div class="how-grid">
+
+      <div class="card how-card">
+        <h3>The Critical Path</h3>
+        <p>Each flight turnaround follows a dependency graph. Sequential tasks cannot overlap; parallel tasks run simultaneously.</p>
+        <div class="task-timeline" id="static-timeline" style="margin-top:1rem; margin-bottom:1rem; font-family:var(--font-mono); font-size:0.9rem; color:var(--text-dim)">
+          [Deboarding] → [Cleaning] → [Fueling | Catering] → [Boarding]
+        </div>
+        <p class="how-note">⚡ Boarding cannot start until <strong>both</strong> Fueling <em>and</em> Catering complete.</p>
+      </div>
+
+      <div class="card how-card">
+        <h3>The $25B Problem</h3>
+        <div class="fact-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem;">
+          <div class="fact-item">
+            <div class="fact-value" style="font-size:2rem; color:var(--danger)">$25B</div>
+            <div class="fact-label" style="font-size:0.8rem; color:var(--text-dim)">Lost annually to flight delays worldwide</div>
+          </div>
+          <div class="fact-item">
+            <div class="fact-value" style="font-size:2rem; color:var(--warning)">4×</div>
+            <div class="fact-label" style="font-size:0.8rem; color:var(--text-dim)">Cascade effect — 1 delay triggers 4 downstream delays</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card how-card sim-card full-width-card" style="grid-column: 1 / -1; margin-top:1.5rem;">
+        <h3>Interactive Delay Simulator</h3>
+        <p>Click any active task below to inject a 10-minute delay and watch the cascade:</p>
+        <div id="sim-timeline" class="sim-timeline" style="display:flex; gap:1rem; margin:1.5rem 0;"></div>
+        <div class="sim-result">
+          <span>Estimated Delay Cascade:</span>
+          <span class="sim-delay" id="sim-delay-output" style="font-family:var(--font-mono); font-size:1.2rem; font-weight:bold; margin-left:1rem;">0 minutes</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ DELAY INJECTION MODAL ═══════════════════════ -->
+  <div id="delay-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>⚡ Inject Ground Delay</h2>
+        <button class="modal-close" id="btn-close-modal" style="background:transparent; border:none; color:var(--text-dim); font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label" for="sel-flight" style="display:block; margin-bottom:0.5rem; color:var(--text-dim);">Flight</label>
+        <select class="form-select" id="sel-flight" style="width:100%; padding:0.5rem; margin-bottom:1rem; background:var(--glass-bg); color:var(--text-main); border:1px solid var(--glass-border); border-radius:4px; font-family:var(--font-mono)">
+          <!-- populated by js -->
+        </select>
+
+        <label class="form-label" for="sel-task" style="display:block; margin-bottom:0.5rem; color:var(--text-dim);">Delayed Task</label>
+        <select class="form-select" id="sel-task" style="width:100%; padding:0.5rem; margin-bottom:1rem; background:var(--glass-bg); color:var(--text-main); border:1px solid var(--glass-border); border-radius:4px; font-family:var(--font-mono)">
+          <option value="Arrival">Arrival</option>
+          <option value="Deboarding">Deboarding</option>
+          <option value="Baggage Unload">Baggage Unload</option>
+          <option value="Cleaning">Cleaning</option>
+          <option value="Fueling & Catering">Fueling & Catering</option>
+          <option value="Baggage Load">Baggage Load</option>
+          <option value="Boarding">Boarding</option>
+          <option value="Pushback">Pushback</option>
+        </select>
+
+        <label class="form-label" for="inp-minutes" style="display:block; margin-bottom:0.5rem; color:var(--text-dim);">Delay Duration (minutes)</label>
+        <div class="minutes-row" style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+          <input class="form-input" type="number" id="inp-minutes" value="10" min="5" max="90" style="width:80px; padding:0.5rem; background:var(--glass-bg); color:var(--text-main); border:1px solid var(--glass-border); border-radius:4px; font-family:var(--font-mono)" />
+          
+          <div class="modal-presets" style="display:flex; gap:0.5rem;">
+            <button class="preset-btn" data-val="5" style="background:var(--glass-bg); border:1px solid var(--glass-border); color:var(--text-main); padding:0.4rem 0.6rem; border-radius:4px; cursor:pointer;">+5m</button>
+            <button class="preset-btn" data-val="10" style="background:var(--glass-bg); border:1px solid var(--glass-border); color:var(--text-main); padding:0.4rem 0.6rem; border-radius:4px; cursor:pointer;">+10m</button>
+            <button class="preset-btn" data-val="15" style="background:var(--glass-bg); border:1px solid var(--glass-border); color:var(--text-main); padding:0.4rem 0.6rem; border-radius:4px; cursor:pointer;">+15m</button>
+            <button class="preset-btn" data-val="20" style="background:var(--glass-bg); border:1px solid var(--glass-border); color:var(--text-main); padding:0.4rem 0.6rem; border-radius:4px; cursor:pointer;">+20m</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btn-cancel-modal">Cancel</button>
+        <button class="btn-inject-confirm" id="btn-confirm-inject">Inject &amp; Analyze →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ FLIGHT DETAIL MODAL ═══════════════════════ -->
+  <div id="flight-modal" class="modal-overlay hidden">
+    <div class="modal-box modal-box-lg">
+      <div class="modal-header">
+        <h2 id="flight-modal-title">Flight Detail</h2>
+        <button class="modal-close" id="btn-close-flight-modal">✕</button>
+      </div>
+      <div class="modal-body" id="flight-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ AI INTERVENTION MODAL ═══════════════════════ -->
+  <div id="ai-intervention-modal" class="modal-overlay hidden">
+    <div class="modal-box modal-box-lg" style="border-color: var(--success); box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);">
+      <div class="modal-header">
+        <h2 style="color:var(--success); display:flex; align-items:center; gap:0.5rem;"><span style="font-size:1.5rem">🤖</span> AI Intervention</h2>
+        <button class="modal-close" id="btn-close-ai-modal" style="background:transparent; border:none; color:var(--text-dim); font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body" id="ai-intervention-body" style="font-family:var(--font-mono); font-size:1.1rem; line-height:1.6; padding:1.5rem 0;">
+        <!-- Filled by JS -->
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end;">
+        <button class="btn-inject-confirm" id="btn-ack-ai-modal" style="background:var(--success)">Acknowledge</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app_v4.js"></script>
+</body>
+</html>
