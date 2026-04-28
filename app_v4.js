@@ -719,10 +719,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!res.ok) throw new Error("Backend error");
         const data = await res.json();
         
-        let md = data.report.replace(/\n/g, '<br/>');
-        content.innerHTML = `<div style="color:var(--text-bright);">${md}</div>`;
+        let html = `
+          <div style="color:var(--text-bright); line-height:1.6;">
+            <p><strong>Status:</strong> <span style="color:var(--success)">Report Generated Successfully</span></p>
+            <p><strong>Summary:</strong> ${data.summary}</p>
+            <p><strong>Critical Alerts:</strong> <span style="color:${data.critical_alerts > 0 ? 'var(--danger)' : 'var(--success)'}">${data.critical_alerts}</span></p>
+            <p><strong>Time Saved Today:</strong> <span style="color:var(--success)">${data.time_saved_today} minutes</span></p>
+            <p><strong>Recommendations:</strong></p>
+            <ul style="margin-left: 20px; margin-top: 8px;">
+              ${(data.recommendations || []).map(r => `<li style="margin-bottom: 4px;">${r}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+        content.innerHTML = html;
+        // Optionally keep the button hidden after generation
       } catch(e) {
-        content.innerHTML = `<span style="color:var(--danger)">Error connecting to backend API. Please make sure the Flask server is running.</span>`;
+        content.innerHTML = `<span style="color:var(--danger)">Error connecting to backend API (${e.message}). Please make sure the Flask server is running at ${API}.</span>`;
         btnGen.style.display = 'block';
       }
     });

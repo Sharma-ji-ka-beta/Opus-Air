@@ -367,6 +367,28 @@ def accept_recommendation():
         "flight": FLIGHTS.get(flight_id),
         "time_saved_today": STATS["time_saved_today"],
     })
+@app.post("/api/generate_report")
+def generate_report():
+    data = request.get_json(silent=True) or {}
+    flight_id = data.get("id", "Unknown")
+    
+    with _lock:
+        active_count = len([f for f in FLIGHTS.values() if f["status"] == "Turnaround"])
+        critical_alerts = sum(1 for f in FLIGHTS.values() if f["delay_minutes"] > 0)
+        time_saved = STATS["time_saved_today"]
+
+        recommendations = [
+            f"Reassign Fuel Truck 2 to {flight_id}" if flight_id != "Unknown" else "Reassign Fuel Truck 2 to OA101",
+            "Expedite Boarding for OA204"
+        ]
+
+    return jsonify({
+        "success": True,
+        "summary": f"{active_count} active flights under turnaround monitoring",
+        "critical_alerts": critical_alerts,
+        "time_saved_today": time_saved,
+        "recommendations": recommendations
+    })
 
 
 @app.get("/api/logs")
